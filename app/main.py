@@ -247,9 +247,9 @@ async def get_categories():
     return {"categories": CATEGORIES}
 
 @app.post("/quiz/{category_id}")
-async def generate_question(category_id: str):
+async def generate_question(category_id: str, difficulty: str = "beginner"):
     """Generate a new question for the specified category."""
-    print(f"Generating question for category: {category_id}")
+    print(f"Generating question for category: {category_id} with difficulty: {difficulty}")
     
     # Validate category
     category = next((cat for cat in CATEGORIES if cat["id"] == category_id), None)
@@ -257,18 +257,34 @@ async def generate_question(category_id: str):
         print(f"Invalid category ID: {category_id}")
         raise HTTPException(status_code=400, detail=f"Invalid category ID: {category_id}")
 
+    # Validate difficulty
+    valid_difficulties = ["beginner", "intermediate", "advanced"]
+    if difficulty not in valid_difficulties:
+        print(f"Invalid difficulty: {difficulty}")
+        raise HTTPException(status_code=400, detail=f"Invalid difficulty. Must be one of: {', '.join(valid_difficulties)}")
+
     # Retrieve relevant knowledge
     try:
         results = knowledge_collection.query(
             query_texts=[f"Generate a question about {category['name']}"],
-            where={"category": category_id},
+            where={"$and": [
+                {"category": category_id},
+                {"difficulty": difficulty}
+            ]},
             n_results=3
         )
         print(f"Retrieved {len(results['documents'][0])} relevant documents")
         
         if not results['documents'][0]:
-            print("No documents found for category")
-            raise HTTPException(status_code=404, detail="No knowledge base content found for this category")
+            print("No documents found for category and difficulty")
+            # Fallback to any difficulty if no documents found for requested difficulty
+            results = knowledge_collection.query(
+                query_texts=[f"Generate a question about {category['name']}"],
+                where={"category": category_id},
+                n_results=3
+            )
+            if not results['documents'][0]:
+                raise HTTPException(status_code=404, detail="No knowledge base content found for this category")
             
         if not results['metadatas'][0]:
             print("No metadata found for documents")
@@ -288,15 +304,20 @@ async def generate_question(category_id: str):
     prompt = f"""You are a quiz generator for teaching about {category['name']}. 
     Using this context: {context}
     
-    The content type is {metadata.get('type', 'general')} and the difficulty level is {metadata.get('difficulty', 'intermediate')}.
-    Generate a {metadata.get('difficulty', 'intermediate')}-level multiple choice question that tests understanding of {category['name']},
-    focusing on {metadata.get('type', 'general')} aspects.
+    Generate a {difficulty}-level multiple choice question that tests understanding of {category['name']}.
+    
+    Important guidelines for {difficulty} level:
+    - Use simple, clear language
+    - Focus on fundamental concepts
+    - Avoid technical jargon unless necessary
+    - Make sure options are distinct and unambiguous
+    - Include a clear, helpful explanation
     
     Format your response as a valid JSON object with these exact fields:
     - question: the question text
     - options: array of 4 options prefixed with A), B), C), D)
     - correct_answer: just the letter (A, B, C, or D)
-    - explanation: brief explanation of the correct answer
+    - explanation: brief, easy-to-understand explanation of the correct answer
     
     Keep the response concise and ensure it's valid JSON."""
 
@@ -367,4 +388,26 @@ async def submit_feedback(question_id: str, feedback: dict):
         )
         return {"status": "success"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to save feedback: {str(e)}") 
+        raise HTTPException(status_code=500, detail=f"Failed to save feedback: {str(e)}")
+
+@app.get("/debug/feedback")
+async def get_feedback():
+    """Get all feedback from user_progress_collection"""
+    results = user_progress_collection.get()
+    return {
+        "count": len(results["ids"]),
+        "ids": results["ids"],
+        "documents": results["documents"],
+        "metadatas": results["metadatas"]
+    }
+
+@app.get("/debug/knowledge")
+async def get_knowledge():
+    """Get all entries from knowledge_collection"""
+    results = knowledge_collection.get()
+    return {
+        "count": len(results["ids"]),
+        "ids": results["ids"],
+        "documents": results["documents"],
+        "metadatas": results["metadatas"]
+    } 
