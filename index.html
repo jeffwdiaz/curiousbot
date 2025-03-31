@@ -5,19 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Study Buddy - LLM Learning Assistant</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="/static/colors.css" rel="stylesheet">
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="min-h-screen">
     <div class="container mx-auto px-4 py-8">
         <header class="text-center mb-12">
-            <h1 class="text-4xl font-bold text-gray-800 mb-4">AI Study Buddy</h1>
-            <p class="text-gray-600">Learn about Language Models through interactive quizzes</p>
+            <h1 class="header-title mb-4">AI Study Buddy</h1>
+            <p class="header-subtitle">Learn about Language Models through interactive quizzes</p>
         </header>
 
         <!-- Difficulty Selection -->
         <div id="difficulty-section" class="mb-8">
-            <h2 class="text-2xl font-semibold mb-6 text-gray-800">Select Difficulty</h2>
+            <h2 class="section-title mb-6">Select Difficulty</h2>
             <div class="max-w-md mx-auto">
-                <select id="difficulty-select" class="w-full p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                <select id="difficulty-select" class="w-full p-3 shadow-sm select-input rounded">
                     <option value="beginner">Beginner</option>
                     <option value="intermediate">Intermediate</option>
                     <option value="advanced">Advanced</option>
@@ -27,7 +28,7 @@
 
         <!-- Category Selection -->
         <div id="category-section" class="mb-8">
-            <h2 class="text-2xl font-semibold mb-6 text-gray-800">Select a Category</h2>
+            <h2 class="section-title mb-6">Select a Category</h2>
             <div id="categories" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <!-- Categories will be populated here -->
             </div>
@@ -35,16 +36,16 @@
 
         <!-- Quiz Section -->
         <div id="quiz-section" class="hidden">
-            <div class="bg-white rounded-lg shadow-lg p-8 max-w-3xl mx-auto">
+            <div class="card p-8 max-w-3xl mx-auto rounded">
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-semibold text-gray-800">Question</h2>
-                    <button id="new-category" class="text-blue-600 hover:text-blue-800">
+                    <h2 class="quiz-title">Question</h2>
+                    <button id="new-category" class="btn-link">
                         Change Category
                     </button>
                 </div>
                 
                 <div class="mb-8">
-                    <p id="question-text" class="text-xl text-gray-700 mb-6"></p>
+                    <p id="question-text" class="question-text mb-6"></p>
                     
                     <div id="options" class="space-y-4">
                         <!-- Options will be populated here -->
@@ -52,27 +53,27 @@
                 </div>
 
                 <div id="feedback" class="hidden">
-                    <div class="bg-gray-50 rounded-lg p-6 mb-6">
-                        <h3 class="text-lg font-semibold mb-2">Explanation</h3>
-                        <p id="explanation" class="text-gray-700"></p>
+                    <div class="feedback-container p-6 mb-6 rounded">
+                        <h3 class="feedback-title mb-2">Explanation</h3>
+                        <p id="explanation" class="feedback-text"></p>
                     </div>
                     
                     <div class="flex justify-between items-center">
-                        <button id="next-question" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        <button id="next-question" class="btn-primary px-6 py-2 rounded">
                             Next Question
                         </button>
                         <div class="flex space-x-4">
-                            <button id="feedback-helpful" class="text-green-600 hover:text-green-800">
+                            <button id="feedback-helpful" class="btn-success">
                                 Helpful
                             </button>
-                            <button id="feedback-not-helpful" class="text-red-600 hover:text-red-800">
+                            <button id="feedback-not-helpful" class="btn-danger">
                                 Not Helpful
                             </button>
                         </div>
                     </div>
                 </div>
 
-                <button id="submit-answer" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                <button id="submit-answer" class="btn-primary px-6 py-2 rounded">
                     Submit Answer
                 </button>
             </div>
@@ -95,10 +96,10 @@
         function displayCategories(categories) {
             const container = document.getElementById('categories');
             container.innerHTML = categories.map(category => `
-                <div class="bg-white p-6 rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                <div class="card p-6 shadow-md cursor-pointer hover:shadow-lg transition-shadow rounded"
                      onclick="selectCategory('${category.id}')">
-                    <h3 class="text-xl font-semibold mb-2">${category.name}</h3>
-                    <p class="text-gray-600">${category.description}</p>
+                    <h3 class="card-title mb-2">${category.name}</h3>
+                    <p class="card-description">${category.description}</p>
                 </div>
             `).join('');
         }
@@ -128,10 +129,10 @@
             
             const optionsContainer = document.getElementById('options');
             optionsContainer.innerHTML = question.options.map((option, index) => `
-                <div class="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 cursor-pointer"
+                <div class="flex items-center space-x-3 p-4 option-container cursor-pointer rounded"
                      onclick="selectOption(this)">
                     <input type="radio" name="answer" value="${option}" id="option${index}"
-                           class="form-radio text-blue-600">
+                           class="radio-button">
                     <label for="option${index}" class="text-gray-700 cursor-pointer flex-grow">${option}</label>
                 </div>
             `).join('');
@@ -147,9 +148,9 @@
             
             // Update styling
             document.querySelectorAll('#options > div').forEach(div => {
-                div.classList.remove('border-blue-500', 'bg-blue-50');
+                div.classList.remove('option-selected');
             });
-            element.classList.add('border-blue-500', 'bg-blue-50');
+            element.classList.add('option-selected');
         }
 
         // Handle answer submission

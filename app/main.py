@@ -238,8 +238,7 @@ class QuestionResponse(BaseModel):
 
 @app.get("/")
 async def read_root():
-    """Serve the main application page."""
-    return FileResponse("app/static/index.html")
+    return FileResponse("index.html")
 
 @app.get("/categories")
 async def get_categories():
