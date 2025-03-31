@@ -60,13 +60,17 @@
     --text-gray: #4a5568;
     
     /* UI Colors */
-    --white: #ffffff;
+    --white: #EEE5E9;
     --gray-50: #f7fafc;
     --gray-100: #edf2f7;
     --blue-500: #3182ce;
     --blue-600: #2b6cb0;
     --green-600: #2f855a;
     --red-600: #c53030;
+    --peach:#F1BF98;
+    --purple:#8109f2;
+    --green:#9DCDC0;
+    --red:#FF3864;
 }
 
 /* Base styles */
@@ -74,6 +78,7 @@ body {
     background-color: var(--primary-purple) !important;
     color: var(--text-light);
     font-family: 'Galano', sans-serif !important;
+    position: relative;
 }
 
 /* Header styles */
@@ -99,7 +104,6 @@ body {
 .select-input {
     background-color: var(--white);
     color: var(--text-dark);
-    border-color: var(--white);
     font-family: 'Galano', sans-serif;
 }
 
@@ -139,16 +143,35 @@ body {
 }
 
 .option-container {
-    border-color: var(--gray-100);
+    padding: 1rem;
+    border-color: var(--gray-600);
+    background-color: var(--gray-600);
 }
 
 .option-container:hover {
-    background-color: var(--gray-50);
+    border-color: var(--peach);
+    background-color: var(--peach);
 }
 
 .option-selected {
-    border-color: var(--primary-purple);
-    background-color: var(--light-purple);
+    border-color: var(--primary-purple) !important;
+    background-color: var(--light-purple) !important;
+}
+
+.option-correct {
+    background-color: #9DCDC0;
+    border-color: #9DCDC0 !important; 
+    border-width: 2px;
+}
+
+.option-incorrect {
+    background-color: #FF3864;
+    border-color: #FF3864 !important;
+    border-width: 2px;
+}
+
+.option-incorrect label {
+    color: white;
 }
 
 /* Buttons */
@@ -168,7 +191,7 @@ body {
 }
 
 .btn-link:hover {
-    color: var(--dark-purple);
+    color: var(--purple);
 }
 
 .btn-success {
@@ -176,23 +199,26 @@ body {
     font-weight: 500;
 }
 
-.btn-success:hover {
-    color: var(--blue-600);
+.btn-success.disabled {
+    color: #a0aec0;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 .btn-danger {
-    color: var(--red-600);
+    color: var(--red);
     font-weight: 500;
 }
 
-.btn-danger:hover {
-    color: var(--red-600);
-    opacity: 0.8;
+.btn-danger.disabled {
+    color: #a0aec0;
+    cursor: not-allowed;
+    pointer-events: none;
 }
 
 /* Feedback section */
 .feedback-container {
-    background-color: var(--gray-50);
+    background-color: var(--peach);
     border-radius: 0.75rem;
 }
 
@@ -240,10 +266,6 @@ button {
     transition: all 0.2s ease-in-out;
 }
 
-button:hover {
-    transform: translateY(-1px);
-}
-
 /* Rounded corners */
 .rounded {
     border-radius: 0.1rem;
@@ -260,4 +282,21 @@ button:hover {
 
 .rounded-xl {
     border-radius: 1rem;
+}
+
+/* Imp mascot */
+.imp-container {
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 9999;
+    pointer-events: none;
+    width: 200px;
+    height: 200px;
+}
+
+.imp-mascot {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
 } 

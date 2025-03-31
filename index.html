@@ -3,21 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Study Buddy - LLM Learning Assistant</title>
+    <title>IMP - LLM Learning Assistant</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="/static/colors.css" rel="stylesheet">
 </head>
 <body class="min-h-screen">
+    <div class="imp-container">
+        <img src="/static/images/imp.png" alt="Imp Mascot" class="imp-mascot">
+    </div>
     <div class="container mx-auto px-4 py-8">
         <header class="text-center mb-12">
-            <h1 class="header-title mb-4">AI Study Buddy</h1>
-            <p class="header-subtitle">Learn about Language Models through interactive quizzes</p>
+            <h1 class="header-title mb-4">Imp</h1>
+            <p class="header-subtitle">Information Module for Pursuit</p>
         </header>
 
         <!-- Difficulty Selection -->
         <div id="difficulty-section" class="mb-8">
             <h2 class="section-title mb-6">Select Difficulty</h2>
-            <div class="max-w-md mx-auto">
+            <div class="max-w-xs">
                 <select id="difficulty-select" class="w-full p-3 shadow-sm select-input rounded">
                     <option value="beginner">Beginner</option>
                     <option value="intermediate">Intermediate</option>
@@ -63,19 +66,15 @@
                             Next Question
                         </button>
                         <div class="flex space-x-4">
-                            <button id="feedback-helpful" class="btn-success">
+                            <button id="feedback-helpful" class="btn-success rounded">
                                 Helpful
                             </button>
-                            <button id="feedback-not-helpful" class="btn-danger">
+                            <button id="feedback-not-helpful" class="btn-danger rounded">
                                 Not Helpful
                             </button>
                         </div>
                     </div>
                 </div>
-
-                <button id="submit-answer" class="btn-primary px-6 py-2 rounded">
-                    Submit Answer
-                </button>
             </div>
         </div>
     </div>
@@ -115,75 +114,139 @@
 
         // Generate new question
         async function generateQuestion(difficulty = 'beginner') {
-            const response = await fetch(`/quiz/${currentCategory}?difficulty=${difficulty}`, {
-                method: 'POST'
-            });
-            currentQuestion = await response.json();
-            currentQuestionId = `q-${Date.now()}`;
-            displayQuestion(currentQuestion);
+            try {
+                const response = await fetch(`/quiz/${currentCategory}?difficulty=${difficulty}`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to generate question');
+                }
+                
+                const data = await response.json();
+                console.log('Server response:', data);
+                
+                if (!data || !data.question || !Array.isArray(data.options)) {
+                    console.error('Invalid response format:', data);
+                    throw new Error('Invalid question format received from server');
+                }
+                
+                currentQuestion = data;
+                currentQuestionId = `q-${Date.now()}`;
+                displayQuestion(currentQuestion);
+            } catch (error) {
+                console.error('Error generating question:', error);
+                alert('Failed to generate question: ' + error.message);
+            }
         }
 
         // Display question
         function displayQuestion(question) {
-            document.getElementById('question-text').textContent = question.question;
-            
-            const optionsContainer = document.getElementById('options');
-            optionsContainer.innerHTML = question.options.map((option, index) => `
-                <div class="flex items-center space-x-3 p-4 option-container cursor-pointer rounded"
-                     onclick="selectOption(this)">
-                    <input type="radio" name="answer" value="${option}" id="option${index}"
-                           class="radio-button">
-                    <label for="option${index}" class="text-gray-700 cursor-pointer flex-grow">${option}</label>
-                </div>
-            `).join('');
+            try {
+                if (!question || !question.question || !Array.isArray(question.options)) {
+                    console.error('Invalid question object:', question);
+                    throw new Error('Invalid question format');
+                }
+                
+                document.getElementById('question-text').textContent = question.question;
+                
+                const optionsContainer = document.getElementById('options');
+                optionsContainer.innerHTML = question.options.map((option, index) => {
+                    const escapedOption = option.replace(/'/g, "\\'");
+                    return `
+                        <div class="flex items-center space-x-3 p-4 option-container cursor-pointer rounded"
+                             onclick="selectOption(this, '${escapedOption}')">
+                            <label class="text-gray-700 cursor-pointer flex-grow">${option}</label>
+                        </div>
+                    `;
+                }).join('');
 
-            document.getElementById('feedback').classList.add('hidden');
-            document.getElementById('submit-answer').classList.remove('hidden');
+                // Reset pointer events and remove any previous styling
+                document.querySelectorAll('#options > div').forEach(div => {
+                    div.style.pointerEvents = 'auto';
+                    div.classList.remove('option-correct', 'option-incorrect');
+                });
+
+                document.getElementById('feedback').classList.add('hidden');
+            } catch (error) {
+                console.error('Error displaying question:', error);
+                alert('Error displaying question: ' + error.message);
+            }
         }
 
-        // Handle option selection
-        function selectOption(element) {
-            const radio = element.querySelector('input[type="radio"]');
-            radio.checked = true;
-            
-            // Update styling
+        // Handle option selection and answer submission
+        async function selectOption(element, selectedAnswer) {
+            // Disable all options to prevent multiple selections
             document.querySelectorAll('#options > div').forEach(div => {
-                div.classList.remove('option-selected');
+                div.style.pointerEvents = 'none';
+                // Remove any existing classes first
+                div.classList.remove('option-correct', 'option-incorrect');
             });
-            element.classList.add('option-selected');
-        }
 
-        // Handle answer submission
-        async function submitAnswer() {
-            const selectedAnswer = document.querySelector('input[name="answer"]:checked')?.value;
-            if (!selectedAnswer) {
-                alert('Please select an answer');
-                return;
+            // Clean up the answers for comparison by removing the prefix and trimming
+            const cleanSelected = selectedAnswer.replace(/^[A-Z]\)\s+/, '').trim();
+            const cleanCorrect = currentQuestion.correct_answer.replace(/^[A-Z]\)\s+/, '').trim();
+
+            console.log('Cleaned selected answer:', cleanSelected);
+            console.log('Cleaned correct answer:', cleanCorrect);
+            console.log('Are they equal?', cleanSelected === cleanCorrect);
+
+            // Update styling based on correct/incorrect answer
+            if (cleanSelected === cleanCorrect || selectedAnswer.trim().startsWith(currentQuestion.correct_answer)) {
+                element.classList.add('option-correct');
+                console.log('Adding correct class');
+            } else {
+                element.classList.add('option-incorrect');
+                console.log('Adding incorrect class');
+                // Also highlight the correct answer
+                document.querySelectorAll('#options > div').forEach(div => {
+                    const label = div.querySelector('label');
+                    const labelText = label.textContent.replace(/^[A-Z]\)\s+/, '').trim();
+                    if (labelText === cleanCorrect || label.textContent.trim().startsWith(currentQuestion.correct_answer)) {
+                        div.classList.add('option-correct');
+                        console.log('Highlighting correct answer:', label.textContent);
+                    }
+                });
             }
 
-            const isCorrect = selectedAnswer === currentQuestion.correct_answer;
+            // Show feedback immediately
             document.getElementById('explanation').textContent = currentQuestion.explanation;
             document.getElementById('feedback').classList.remove('hidden');
-            document.getElementById('submit-answer').classList.add('hidden');
         }
 
         // Handle feedback submission
         async function submitFeedback(isHelpful) {
-            await fetch(`/feedback/${currentQuestionId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    helpful: isHelpful,
-                    question_id: currentQuestionId
-                })
-            });
+            try {
+                await fetch(`/feedback/${currentQuestionId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        helpful: isHelpful,
+                        question_id: currentQuestionId
+                    })
+                });
+
+                // Disable both feedback buttons
+                const helpfulButton = document.getElementById('feedback-helpful');
+                const notHelpfulButton = document.getElementById('feedback-not-helpful');
+                
+                helpfulButton.classList.add('disabled');
+                notHelpfulButton.classList.add('disabled');
+                helpfulButton.disabled = true;
+                notHelpfulButton.disabled = true;
+            } catch (error) {
+                console.error('Error submitting feedback:', error);
+            }
         }
 
         // Event listeners
-        document.getElementById('submit-answer').addEventListener('click', submitAnswer);
-        document.getElementById('next-question').addEventListener('click', generateQuestion);
+        document.getElementById('next-question').addEventListener('click', () => {
+            const difficulty = document.getElementById('difficulty-select').value;
+            generateQuestion(difficulty);
+        });
         document.getElementById('new-category').addEventListener('click', () => {
             document.getElementById('quiz-section').classList.add('hidden');
             document.getElementById('category-section').classList.remove('hidden');
