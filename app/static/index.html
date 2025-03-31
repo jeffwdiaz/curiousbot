@@ -13,6 +13,18 @@
             <p class="text-gray-600">Learn about Language Models through interactive quizzes</p>
         </header>
 
+        <!-- Difficulty Selection -->
+        <div id="difficulty-section" class="mb-8">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-800">Select Difficulty</h2>
+            <div class="max-w-md mx-auto">
+                <select id="difficulty-select" class="w-full p-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                </select>
+            </div>
+        </div>
+
         <!-- Category Selection -->
         <div id="category-section" class="mb-8">
             <h2 class="text-2xl font-semibold mb-6 text-gray-800">Select a Category</h2>
@@ -94,14 +106,15 @@
         // Select category and start quiz
         async function selectCategory(categoryId) {
             currentCategory = categoryId;
+            const difficulty = document.getElementById('difficulty-select').value;
             document.getElementById('category-section').classList.add('hidden');
             document.getElementById('quiz-section').classList.remove('hidden');
-            await generateQuestion();
+            await generateQuestion(difficulty);
         }
 
         // Generate new question
-        async function generateQuestion() {
-            const response = await fetch(`/quiz/${currentCategory}`, {
+        async function generateQuestion(difficulty = 'beginner') {
+            const response = await fetch(`/quiz/${currentCategory}?difficulty=${difficulty}`, {
                 method: 'POST'
             });
             currentQuestion = await response.json();
